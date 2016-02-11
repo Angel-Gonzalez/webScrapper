@@ -14,5 +14,5 @@ params:
 
 </ul>
 Example full query:
-python3 Scrapper.py -u https://es.wikipedia.org -t a -c external -g href
+<code>python3 Scrapper.py -u https://es.wikipedia.org -t a -c external -g href</code>
 this will return all <a> tags with a class "external" getting the href value of them
