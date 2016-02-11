@@ -63,7 +63,7 @@ class Element(object):
             s = BeautifulSoup(str(self.__element), "lxml")
             if self.tag is not None and self.__text is None:
                 if self.__attr is not None:
-                    self.__text = get_str(s.find(self.tag, self.attributes))
+                    self.__text = get_str(s.find(self.tag, attrs=self.attributes))
                 elif self.classes is not None:
                     self.__text = get_str(s.find(self.tag, self.classes))
                 return self.__text
@@ -95,7 +95,7 @@ class Element(object):
         :return:
         """
         key, val = str(value).split(":")
-        self.__attr = "attrs={\"%s\": \"%s\"}" % (key, val)
+        self.__attr = {key: val}
 
     @property
     def href(self):
@@ -123,5 +123,22 @@ class Element(object):
                 return [Element(child) for child in s.find_all(target_tag, target_class)]
             else:
                 return [Element(child) for child in s.find_all(target_tag)]
+        else:
+            return None
+
+    def get_src(self, target_tag, attribute=None):
+        """
+        Get the src value from target tag
+        :param target_tag: string
+        :param attribute: string
+        :return: list
+        """
+        if self.element is not None:
+            s = BeautifulSoup(str(self.__element), "lxml")
+            if attribute is not None:
+                self.attributes = attribute
+                return str(s.find(target_tag, attrs=self.attributes)["src"]).replace("//", "")
+            else:
+                return [str(child["src"]).replace("//", "") for child in s.find_all(target_tag)]
         else:
             return None

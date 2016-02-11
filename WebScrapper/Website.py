@@ -1,4 +1,4 @@
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, urljoin
 
 
 class Website(object):
@@ -58,6 +58,12 @@ class Website(object):
         self.__query = value
 
     def construct_queries(self, start=None, end=None):
+        """
+        Construct a list for pagination site scrapping
+        :param start: int
+        :param end: int
+        :return: list
+        """
         global q
         if len(self.query) > 0 and start < end:
             k = list(parse_qs(self.query).keys())[0]
@@ -66,3 +72,15 @@ class Website(object):
                 q.append("{uri.scheme}://{uri.netloc}/{uri.path}?{param}={s}".format(uri=urlparse(self.url), param=k,
                                                                                      s=s))
         return q
+
+    def complete_path(self, url):
+        """
+        Complete path with main domain uri
+        :param url: string
+        :return: string
+        """
+        parsed_url = "{uri.scheme}".format(uri=urlparse(url))
+        if parsed_url not in ("http", "https"):
+            return urljoin(self.url, url)
+        else:
+            return url

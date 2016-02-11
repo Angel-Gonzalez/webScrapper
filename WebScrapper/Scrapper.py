@@ -1,9 +1,12 @@
 #!/bin/python3
 
 import getopt
+import os
+import random
 import sys
 from datetime import datetime
 
+import re
 import requests
 
 from WebScrapper.Element import Element
@@ -23,12 +26,31 @@ def request_content(url, headers):
         return None
 
 
+def write_image(url):
+    pattern = re.compile('(?:[^/][\d\w\.]+)$(?<=\.\w{3})')
+    if re.match(pattern, url):
+        path = "../img/" + re.findall(pattern, url)[0]
+    else:
+        path = "../img/" + str(random.randrange(0, 100000, 5)) + ".jpg"
+    response = requests.get(url, stream=True, verify=False)
+    if response.status_code == requests.codes.ok:
+        if not os.path.exists("../img"):
+            try:
+                os.makedirs("../img")
+            except OSError as e:
+                print(e)
+        with open(path, "wb") as f:
+            for chunk in response:
+                f.write(chunk)
+
+
 def main(argv):
     url = None
     tag = None
     cls = None
     text = False
     href = False
+    img = False
     get_child = False
     try:
         opts, args = getopt.getopt(argv, "hu:t:c:g:text:href:", ["url=", "tag=", "class=", "get="])
@@ -50,6 +72,7 @@ def main(argv):
             get_child = True
             text = True if arg == "text" else False
             href = True if arg == "href" else False
+            img = True if arg == "img" else False
     # Evaluates script params
     if url is not None:
         s = Scrapper(url)
@@ -60,6 +83,9 @@ def main(argv):
                 elif href and tag == "a":
                     child.tag = tag
                     print(child.href)
+                elif img and tag == "img":
+                    print(s.complete_path(child.get_src(tag)[0]))
+                    write_image(s.complete_path(child.get_src(tag)[0]))
         elif get_child and tag is not None and cls is not None:
             for child in s.content.get_child(tag, cls):
                 if text:
@@ -68,6 +94,9 @@ def main(argv):
                     child.tag = tag
                     child.classes = cls
                     print(child.href)
+                elif img and tag == "img":
+                    print(s.complete_path(child.get_src(tag)))
+                    write_image(s.complete_path(child.get_src(tag, cls)[0]))
         elif tag is not None:
             s.content.tag = tag
             print(s.content.text)
