@@ -26,17 +26,17 @@ def request_content(url, headers):
         return None
 
 
-def write_image(url):
+def write_image(url, folder_path="./img/"):
     pattern = re.compile('(?:[^/][\d\w\.]+)$(?<=\.\w{3})')
     if re.match(pattern, url):
-        path = "../img/" + re.findall(pattern, url)[0]
+        path = folder_path + re.findall(pattern, url)[0]
     else:
-        path = "../img/" + str(random.randrange(0, 100000, 5)) + ".jpg"
+        path = folder_path + str(random.randrange(0, 100000, 5)) + ".jpg"
     response = requests.get(url, stream=True, verify=False)
     if response.status_code == requests.codes.ok:
-        if not os.path.exists("../img"):
+        if not os.path.exists(folder_path):
             try:
-                os.makedirs("../img")
+                os.makedirs(folder_path)
             except OSError as e:
                 print(e)
         with open(path, "wb") as f:
@@ -77,7 +77,7 @@ def main(argv):
     if url is not None:
         s = Scrapper(url)
         if get_child and tag is not None and cls is None:
-            for child in s.content.get_child(tag):
+            for child in s.content.find_children(tag):
                 if text:
                     print(child.text)
                 elif href and tag == "a":
@@ -87,7 +87,7 @@ def main(argv):
                     print(s.complete_path(child.get_src(tag)[0]))
                     write_image(s.complete_path(child.get_src(tag)[0]))
         elif get_child and tag is not None and cls is not None:
-            for child in s.content.get_child(tag, cls):
+            for child in s.content.find_children(tag, cls):
                 if text:
                     print(child.text)
                 elif href and tag == "a":

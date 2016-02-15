@@ -1,3 +1,5 @@
+import xml.etree.ElementTree as ElementTree
+
 from bs4 import BeautifulSoup
 
 
@@ -15,33 +17,59 @@ class Element(object):
         self.__tag = None
         self.__attr = None
         self.__classes = None
-        self.__element = element
+        self.__element = BeautifulSoup(str(element), "lxml")
         self.__text = None
         self.__href = None
 
     @property
     def tag(self):
         """
-        Get the type of the element
+        Get the tag name of the root element
         :return: string
         """
+        bse = list(self.__element.find("body").children)
+        if len(bse) > 1:
+            self.__tag = self.__element.find("body").name
+        elif len(bse) == 1:
+            self.__tag = bse[0].name
         return self.__tag
 
     @tag.setter
     def tag(self, value):
         """
-        Set target tag for scrap
+        Set
         :param value: string
         :return:
         """
         self.__tag = value
 
     @property
+    def parent(self):
+        """
+        Get the name of the parent for the current element
+        :return: string
+        """
+        parent = self.element.find(self.tag).parent.name
+        if parent == "body":
+            return None
+        else:
+            return parent
+
+    @property
+    def children(self):
+        """
+        Get children for the root element
+        :return: list
+        """
+        return list(self.element.find(self.tag).children)
+
+    @property
     def classes(self):
         """
         Get classes for target element
-        :return: string
+        :return: list
         """
+        self.__classes = self.__element.find(self.tag)['class']
         return self.__classes
 
     @classes.setter
@@ -60,15 +88,14 @@ class Element(object):
         :return: string
         """
         if self.__element is not None:
-            s = BeautifulSoup(str(self.__element), "lxml")
             if self.tag is not None and self.__text is None:
                 if self.__attr is not None:
-                    self.__text = get_str(s.find(self.tag, attrs=self.attributes))
+                    self.__text = get_str(self.__element.find(self.tag, attrs=self.attributes))
                 elif self.classes is not None:
-                    self.__text = get_str(s.find(self.tag, self.classes))
+                    self.__text = get_str(self.__element.find(self.tag, self.classes))
                 return self.__text
             else:
-                self.__text = s.text
+                self.__text = self.__element.text
                 return self.__text
 
     @property
@@ -85,6 +112,7 @@ class Element(object):
         Get tag attributes for the target tag attrs={"key": "Value"}
         :return: string
         """
+        self.__attr = self.element.find(self.tag).attrs
         return self.__attr
 
     @attributes.setter
@@ -104,13 +132,12 @@ class Element(object):
         :return: string
         """
         if self.tag == "a":
-            s = BeautifulSoup(str(self.__element), "lxml")
-            self.__href = get_href(s.find("a", self.classes))
+            self.__href = get_href(self.__element.find("a", self.classes))
             return self.__href
         else:
             return self.__href
 
-    def get_child(self, target_tag, target_class=None):
+    def find_children(self, target_tag, target_class=None):
         """
         Get target child elements
         :param target_tag: string
@@ -118,11 +145,10 @@ class Element(object):
         :return: list
         """
         if self.element is not None:
-            s = BeautifulSoup(str(self.__element), "lxml")
             if target_class is not None:
-                return [Element(child) for child in s.find_all(target_tag, target_class)]
+                return [Element(child) for child in self.element.find_all(target_tag, target_class)]
             else:
-                return [Element(child) for child in s.find_all(target_tag)]
+                return [Element(child) for child in self.element.find_all(target_tag)]
         else:
             return None
 
@@ -134,11 +160,24 @@ class Element(object):
         :return: list
         """
         if self.element is not None:
-            s = BeautifulSoup(str(self.__element), "lxml")
             if attribute is not None:
                 self.attributes = attribute
-                return str(s.find(target_tag, attrs=self.attributes)["src"]).replace("//", "")
+                return str(self.__element.find(target_tag, attrs=self.attributes)["src"]).replace("//", "")
             else:
-                return [str(child["src"]).replace("//", "") for child in s.find_all(target_tag)]
+                return [str(child["src"]).replace("//", "") for child in self.element.find_all(target_tag)]
         else:
             return None
+
+    def get_xml_object(self):
+        """
+        Get xml object parsed from html element ElementTree
+        :return: xml
+        """
+        return ElementTree.fromstring(self.__element.prettify())
+
+    def get_xml(self):
+        """
+        Get XML string parsed from html element ElementTree
+        :return: string
+        """
+        return self.__element.prettify()
